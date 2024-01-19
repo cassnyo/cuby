@@ -10,6 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.cassnyo.cuby.stopwatch.Chronometer
+import com.cassnyo.cuby.stopwatch.ChronometerScreen
+import com.cassnyo.cuby.stopwatch.ChronometerViewModel
 import com.cassnyo.cuby.ui.theme.CubyTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,25 +22,11 @@ class MainActivity : ComponentActivity() {
             CubyTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Greeting("Android")
+                    ChronometerScreen(
+                        viewModel = ChronometerViewModel(Chronometer())
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    CubyTheme {
-        Greeting("Android")
     }
 }
