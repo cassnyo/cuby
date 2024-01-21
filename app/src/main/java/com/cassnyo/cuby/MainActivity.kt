@@ -13,7 +13,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.cassnyo.cuby.stopwatch.Chronometer
 import com.cassnyo.cuby.stopwatch.ChronometerScreen
 import com.cassnyo.cuby.stopwatch.ChronometerViewModel
+import com.cassnyo.cuby.stopwatch.scramblegenerator.ScrambleGenerator
+import com.cassnyo.cuby.stopwatch.scramblegenerator.ScrambleGeneratorImpl
 import com.cassnyo.cuby.ui.theme.CubyTheme
+import org.worldcubeassociation.tnoodle.puzzle.ThreeByThreeCubePuzzle
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +26,12 @@ class MainActivity : ComponentActivity() {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     ChronometerScreen(
-                        viewModel = ChronometerViewModel(Chronometer())
+                        viewModel = ChronometerViewModel(
+                            chronometer = Chronometer(),
+                            scrambleGenerator = ScrambleGeneratorImpl(
+                                puzzle = ThreeByThreeCubePuzzle()
+                            )
+                        )
                     )
                 }
             }

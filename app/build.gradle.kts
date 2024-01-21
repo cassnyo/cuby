@@ -48,6 +48,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.tnoodle)
+    implementation(libs.androidsvg)
 
     implementation(libs.core.ktx)
     implementation(libs.bundles.lifecycle)
