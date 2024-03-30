@@ -1,15 +1,27 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.cassnyo.cuby.stopwatch
 
 import android.graphics.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,18 +31,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import com.cassnyo.cuby.stopwatch.ChronometerViewModel.State.ScrambleState
 import com.cassnyo.cuby.stopwatch.scramblegenerator.Scramble
 import com.cassnyo.cuby.ui.theme.CubyTheme
+import com.cassnyo.cuby.ui.theme.highlightTextOnBackgroundDark
+import com.cassnyo.cuby.ui.theme.iconOnBackgroundDark
 import com.caverock.androidsvg.SVG
 import kotlin.math.roundToInt
-
 
 @Composable
 fun ChronometerScreen(
@@ -40,55 +52,35 @@ fun ChronometerScreen(
 
     ChronometerScreenContent(
         state = state,
+        onGenerateScrambleClick = { viewModel.onGenerateScrambleClick() },
+        onEditScrambleClick = {},
         onTimerClick = { viewModel.onTimerClick() },
-        onScrambleClick = {viewModel.onScrambleClick() },
     )
 }
 
 @Composable
 private fun ChronometerScreenContent(
     state: ChronometerViewModel.State,
+    onGenerateScrambleClick: () -> Unit,
+    onEditScrambleClick: () -> Unit,
     onTimerClick: () -> Unit,
-    onScrambleClick: () -> Unit,
 ) {
-
-
     Box(
-        contentAlignment = Alignment.Center,
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                color = MaterialTheme.colorScheme.background,
-            )
+            .clickable(onClick = onTimerClick)
     ) {
-        Button(
-           onClick = onTimerClick,
-            modifier = Modifier.align(Alignment.TopStart)
-        ) {
-            Text(text = "Timer")
-        }
-        Button(
-            onClick = onScrambleClick,
-            modifier = Modifier.align(Alignment.TopEnd)
-        ) {
-            Text(text = "Scramble")
-        }
-        Text(
-            text = formatMilliseconds(state.elapsedTimestamp),
-            fontSize = TextUnit(
-                value = 18f,
-                type = TextUnitType.Sp,
-            ),
+        Scramble(
+            scrambleState = state.scramble,
+            onGenerateScrambleClick = onGenerateScrambleClick,
+            onEditScrambleClick = onEditScrambleClick,
         )
 
-        Box(
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            when(state.scramble) {
-                is ScrambleState.Generated -> Scramble(state.scramble.scramble)
-                is ScrambleState.Loading -> LoadingScramble()
-            }
-        }
+        Timer(
+            elapsedMilliseconds = state.elapsedTimestamp,
+            modifier = Modifier
+                .align(Alignment.Center)
+        )
     }
 }
 
@@ -98,26 +90,84 @@ fun formatMilliseconds(milliseconds: Long): String {
     val seconds = totalSeconds % 60
     val remainingMilliseconds = milliseconds % 1000
 
-    return String.format("%02d:%02d.%02d", minutes, seconds, remainingMilliseconds)
+    val formattedMinutes = if (minutes > 0) "$minutes:" else ""
+    val formattedSeconds = if (minutes > 0) String.format("%02d", seconds) else seconds
+    val formattedMilliseconds = String.format("%02d", remainingMilliseconds / 10)
+
+    return "$formattedMinutes$formattedSeconds.$formattedMilliseconds"
 }
 
 @Composable
 private fun Scramble(
+    scrambleState: ScrambleState,
+    onGenerateScrambleClick: () -> Unit,
+    onEditScrambleClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .padding(
+                horizontal = 32.dp,
+                vertical = 16.dp,
+            )
+            .fillMaxWidth(),
+    ) {
+        when (scrambleState) {
+            is ScrambleState.Generated -> {
+                ScrambleSequence(
+                    scramble = scrambleState.scramble,
+                    onGenerateClick = onGenerateScrambleClick,
+                    onEditClick = onEditScrambleClick
+                )
+            }
+            is ScrambleState.Loading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScrambleSequence(
     scramble: Scramble,
+    onGenerateClick: () -> Unit,
+    onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxWidth(),
     ) {
+        // TODO Generate the image with a bigger size
+        // ScrambleImage(
+        //     imageSvg = scramble.image,
+        // )
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = scramble.moves,
+            color = highlightTextOnBackgroundDark,
             textAlign = TextAlign.Justify,
-            style = MaterialTheme.typography.displaySmall,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
         )
-        ScrambleImage(
-            imageSvg = scramble.image,
-            modifier = Modifier.width(250.dp)
-        )
+        Row {
+            IconButton(onClick = onGenerateClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Refresh,
+                    contentDescription = "Refresh",
+                    tint = iconOnBackgroundDark,
+                )
+            }
+            IconButton(onClick = onEditClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = "Edit",
+                    tint = iconOnBackgroundDark,
+                )
+            }
+        }
     }
 }
 
@@ -145,12 +195,30 @@ private fun ScrambleImage(
 }
 
 @Composable
-private fun LoadingScramble(
+private fun Timer(
+    elapsedMilliseconds: Long,
     modifier: Modifier = Modifier,
 ) {
-    CircularProgressIndicator(
-        modifier = modifier,
-    )
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+    ) {
+        Text(
+            text = formatMilliseconds(elapsedMilliseconds),
+            style = MaterialTheme.typography.displayLarge,
+            fontWeight = FontWeight.Bold,
+            color = highlightTextOnBackgroundDark,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+        Spacer(
+            modifier = Modifier.height(6.dp)
+        )
+        Divider(
+            color = iconOnBackgroundDark,
+            thickness = 1.dp,
+            modifier = Modifier.width(240.dp)
+        )
+    }
 }
 
 @Preview
@@ -163,8 +231,9 @@ private fun ChronometerScreenPreview() {
                 timerStarted = true,
                 elapsedTimestamp = 1000,
             ),
+            onGenerateScrambleClick = {},
+            onEditScrambleClick = {},
             onTimerClick = {},
-            onScrambleClick = {},
         )
     }
 }

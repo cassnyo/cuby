@@ -31,18 +31,12 @@ class ChronometerViewModel(
         )
     )
 
-    fun onScrambleClick() {
-        state.value = state.value.copy(
-            scramble = State.ScrambleState.Loading
-        )
-        viewModelScope.launch {
-            val scramble = scrambleGenerator.generate()
-            state.value = state.value.copy(
-                scramble = State.ScrambleState.Generated(
-                    scramble = scramble
-                )
-            )
-        }
+    init {
+        generateScramble()
+    }
+
+    fun onGenerateScrambleClick() {
+        generateScramble()
     }
 
     fun onTimerClick() {
@@ -67,8 +61,18 @@ class ChronometerViewModel(
         }
     }
 
-
-
-
+    private fun generateScramble() {
+        state.value = state.value.copy(
+            scramble = State.ScrambleState.Loading
+        )
+        viewModelScope.launch {
+            val scramble = scrambleGenerator.generate()
+            state.value = state.value.copy(
+                scramble = State.ScrambleState.Generated(
+                    scramble = scramble
+                )
+            )
+        }
+    }
 
 }
