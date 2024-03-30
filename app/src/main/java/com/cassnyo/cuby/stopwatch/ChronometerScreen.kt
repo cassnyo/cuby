@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.cassnyo.cuby.stopwatch
 
 import android.graphics.Canvas
@@ -41,6 +39,7 @@ import com.cassnyo.cuby.stopwatch.scramblegenerator.Scramble
 import com.cassnyo.cuby.ui.theme.CubyTheme
 import com.cassnyo.cuby.ui.theme.highlightTextOnBackgroundDark
 import com.cassnyo.cuby.ui.theme.iconOnBackgroundDark
+import com.cassnyo.cuby.ui.theme.textOnBackground
 import com.caverock.androidsvg.SVG
 import kotlin.math.roundToInt
 
@@ -74,12 +73,20 @@ private fun ChronometerScreenContent(
             scrambleState = state.scramble,
             onGenerateScrambleClick = onGenerateScrambleClick,
             onEditScrambleClick = onEditScrambleClick,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
         )
 
         Timer(
             elapsedMilliseconds = state.elapsedTimestamp,
             modifier = Modifier
                 .align(Alignment.Center)
+        )
+
+        Statistics(
+            statistics = state.statistics,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
         )
     }
 }
@@ -221,6 +228,29 @@ private fun Timer(
     }
 }
 
+@Composable
+private fun Statistics(
+    statistics: ChronometerViewModel.State.Statistics,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+    ) {
+        Text(
+            text = "Count: ${statistics.count}",
+            color = textOnBackground,
+        )
+        Text(
+            text = "Ao5: ${formatMilliseconds(statistics.averageOf5)}",
+            color = textOnBackground,
+        )
+        Text(
+            text = "Ao12: ${formatMilliseconds(statistics.averageOf12)}",
+            color = textOnBackground,
+        )
+    }
+}
+
 @Preview
 @Composable
 private fun ChronometerScreenPreview() {
@@ -230,6 +260,11 @@ private fun ChronometerScreenPreview() {
                 scramble = ScrambleState.Loading,
                 timerStarted = true,
                 elapsedTimestamp = 1000,
+                statistics = ChronometerViewModel.State.Statistics(
+                    count = 50,
+                    averageOf5 = 2000,
+                    averageOf12 = 2000,
+                )
             ),
             onGenerateScrambleClick = {},
             onEditScrambleClick = {},
