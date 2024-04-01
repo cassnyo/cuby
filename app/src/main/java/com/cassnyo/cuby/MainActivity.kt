@@ -7,12 +7,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.cassnyo.cuby.data.TimesRepositoryImpl
+import com.cassnyo.cuby.data.SolvesRepositoryImpl
+import com.cassnyo.cuby.data.database.CubyDatabase
 import com.cassnyo.cuby.stopwatch.Chronometer
 import com.cassnyo.cuby.stopwatch.ChronometerScreen
 import com.cassnyo.cuby.stopwatch.ChronometerViewModel
 import com.cassnyo.cuby.stopwatch.scramblegenerator.ScrambleGeneratorImpl
 import com.cassnyo.cuby.ui.theme.CubyTheme
+import kotlinx.coroutines.Dispatchers
 import org.worldcubeassociation.tnoodle.puzzle.ThreeByThreeCubePuzzle
 
 class MainActivity : ComponentActivity() {
@@ -28,7 +30,10 @@ class MainActivity : ComponentActivity() {
                             scrambleGenerator = ScrambleGeneratorImpl(
                                 puzzle = ThreeByThreeCubePuzzle()
                             ),
-                            timesRepository = TimesRepositoryImpl(),
+                            timesRepository = SolvesRepositoryImpl(
+                                database = CubyDatabase.getInstance(this),
+                                ioDispatcher = Dispatchers.IO,
+                            ),
                         )
                     )
                 }
