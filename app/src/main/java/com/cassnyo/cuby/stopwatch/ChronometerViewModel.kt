@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 class ChronometerViewModel(
     private val chronometer: Chronometer,
@@ -87,6 +88,7 @@ class ChronometerViewModel(
                             it as? State.ScrambleState.Generated
                         }?.scramble?.moves.orEmpty(),
                         time = state.value.elapsedTimestamp,
+                        createdAt = LocalDateTime.now(),
                     )
                 )
             }

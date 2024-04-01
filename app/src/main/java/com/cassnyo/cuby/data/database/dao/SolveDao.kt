@@ -12,8 +12,8 @@ interface SolveDao {
     suspend fun saveSolve(solve: SolveEntity): Long
 
     @Query("DELETE FROM solve WHERE id == :id")
-    suspend fun deleteSolve(id: Int): Boolean
+    suspend fun deleteSolve(id: Int)
 
-    @Query("SELECT * FROM solve")
+    @Query("SELECT * FROM solve ORDER BY createdAt DESC")
     fun observeSolves(): Flow<List<SolveEntity>>
 }
