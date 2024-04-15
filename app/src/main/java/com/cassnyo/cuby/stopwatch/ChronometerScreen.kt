@@ -1,6 +1,10 @@
 package com.cassnyo.cuby.stopwatch
 
 import android.graphics.Canvas
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -16,8 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -69,25 +72,36 @@ private fun ChronometerScreenContent(
             .fillMaxSize()
             .clickable(onClick = onTimerClick)
     ) {
-        Scramble(
-            scrambleState = state.scramble,
-            onGenerateScrambleClick = onGenerateScrambleClick,
-            onEditScrambleClick = onEditScrambleClick,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-        )
+        AnimatedVisibility(
+            visible = !state.timerStarted,
+            enter = slideInVertically(initialOffsetY = { -it }),
+            exit = slideOutVertically(targetOffsetY = { -it }),
+            modifier = Modifier.align(Alignment.TopCenter),
+        ) {
+            Scramble(
+                scrambleState = state.scramble,
+                onGenerateScrambleClick = onGenerateScrambleClick,
+                onEditScrambleClick = onEditScrambleClick,
+            )
+        }
 
         Timer(
+            isTimerRunning = state.timerStarted,
             elapsedMilliseconds = state.elapsedTimestamp,
             modifier = Modifier
                 .align(Alignment.Center)
         )
 
-        Statistics(
-            statistics = state.statistics,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-        )
+        AnimatedVisibility(
+            visible = !state.timerStarted,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it }),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            Statistics(
+                statistics = state.statistics,
+            )
+        }
     }
 }
 
@@ -127,6 +141,7 @@ private fun Scramble(
                     onEditClick = onEditScrambleClick
                 )
             }
+
             is ScrambleState.Loading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
@@ -203,9 +218,15 @@ private fun ScrambleImage(
 
 @Composable
 private fun Timer(
+    isTimerRunning: Boolean,
     elapsedMilliseconds: Long,
     modifier: Modifier = Modifier,
 ) {
+    val dividerSize by animateDpAsState(
+        targetValue = if (isTimerRunning) 0.dp else 240.dp,
+        label = "Timer divider size",
+    )
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -220,10 +241,10 @@ private fun Timer(
         Spacer(
             modifier = Modifier.height(6.dp)
         )
-        Divider(
+        HorizontalDivider(
             color = iconOnBackgroundDark,
-            thickness = 1.dp,
-            modifier = Modifier.width(240.dp)
+            thickness = 2.dp,
+            modifier = Modifier.width(dividerSize)
         )
     }
 }
