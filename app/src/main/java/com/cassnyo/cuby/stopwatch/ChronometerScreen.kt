@@ -3,6 +3,8 @@ package com.cassnyo.cuby.stopwatch
 import android.graphics.Canvas
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
+import com.cassnyo.cuby.stopwatch.ChronometerViewModel.State
 import com.cassnyo.cuby.stopwatch.ChronometerViewModel.State.ScrambleState
 import com.cassnyo.cuby.stopwatch.scramblegenerator.Scramble
 import com.cassnyo.cuby.ui.theme.CubyTheme
@@ -57,14 +61,16 @@ fun ChronometerScreen(
         onGenerateScrambleClick = { viewModel.onGenerateScrambleClick() },
         onEditScrambleClick = {},
         onTimerClick = { viewModel.onTimerClick() },
+        onDeleteSolveClicked = { solveId -> viewModel.onDeleteSolveClicked(solveId) }
     )
 }
 
 @Composable
 private fun ChronometerScreenContent(
-    state: ChronometerViewModel.State,
+    state: State,
     onGenerateScrambleClick: () -> Unit,
     onEditScrambleClick: () -> Unit,
+    onDeleteSolveClicked: (Long) -> Unit,
     onTimerClick: () -> Unit,
 ) {
     Box(
@@ -73,7 +79,7 @@ private fun ChronometerScreenContent(
             .clickable(onClick = onTimerClick)
     ) {
         AnimatedVisibility(
-            visible = !state.timerStarted,
+            visible = !state.timer.isRunning,
             enter = slideInVertically(initialOffsetY = { -it }),
             exit = slideOutVertically(targetOffsetY = { -it }),
             modifier = Modifier.align(Alignment.TopCenter),
@@ -86,14 +92,15 @@ private fun ChronometerScreenContent(
         }
 
         Timer(
-            isTimerRunning = state.timerStarted,
-            elapsedMilliseconds = state.elapsedTimestamp,
+            timer = state.timer,
+            lastSolve = state.lastSolve,
+            onDeleteSolveClicked = onDeleteSolveClicked,
             modifier = Modifier
                 .align(Alignment.Center)
         )
 
         AnimatedVisibility(
-            visible = !state.timerStarted,
+            visible = !state.timer.isRunning,
             enter = slideInVertically(initialOffsetY = { it }),
             exit = slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier.align(Alignment.BottomCenter),
@@ -218,21 +225,27 @@ private fun ScrambleImage(
 
 @Composable
 private fun Timer(
-    isTimerRunning: Boolean,
-    elapsedMilliseconds: Long,
+    timer: State.Timer,
+    lastSolve: State.LastSolve?,
+    onDeleteSolveClicked: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dividerSize by animateDpAsState(
-        targetValue = if (isTimerRunning) 0.dp else 240.dp,
+        targetValue = if (timer.isRunning) 0.dp else 240.dp,
         label = "Timer divider size",
     )
+    val timeMilliseconds = if (timer.isRunning) {
+        timer.elapsedTimestamp
+    } else {
+        lastSolve?.time ?: 0L
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
         Text(
-            text = formatMilliseconds(elapsedMilliseconds),
+            text = formatMilliseconds(timeMilliseconds),
             style = MaterialTheme.typography.displayLarge,
             fontWeight = FontWeight.Bold,
             color = highlightTextOnBackgroundDark,
@@ -246,12 +259,30 @@ private fun Timer(
             thickness = 2.dp,
             modifier = Modifier.width(dividerSize)
         )
+        Spacer(modifier = Modifier.height(6.dp))
+
+        if (lastSolve != null) {
+            AnimatedVisibility(
+                visible = !timer.isRunning,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                IconButton(
+                    onClick = { onDeleteSolveClicked(lastSolve.id) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = "Delete solve",
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
 private fun Statistics(
-    statistics: ChronometerViewModel.State.Statistics,
+    statistics: State.Statistics,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -277,11 +308,17 @@ private fun Statistics(
 private fun ChronometerScreenPreview() {
     CubyTheme {
         ChronometerScreenContent(
-            state = ChronometerViewModel.State(
+            state = State(
                 scramble = ScrambleState.Loading,
-                timerStarted = true,
-                elapsedTimestamp = 1000,
-                statistics = ChronometerViewModel.State.Statistics(
+                timer = State.Timer(
+                    isRunning = false,
+                    elapsedTimestamp = 1000L,
+                ),
+                lastSolve = State.LastSolve(
+                    id = 0,
+                    time = 1000L,
+                ),
+                statistics = State.Statistics(
                     count = 50,
                     averageOf5 = 2000,
                     averageOf12 = 2000,
@@ -290,6 +327,7 @@ private fun ChronometerScreenPreview() {
             onGenerateScrambleClick = {},
             onEditScrambleClick = {},
             onTimerClick = {},
+            onDeleteSolveClicked = {},
         )
     }
 }

@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
                             scrambleGenerator = ScrambleGeneratorImpl(
                                 puzzle = ThreeByThreeCubePuzzle()
                             ),
-                            timesRepository = SolvesRepositoryImpl(
+                            solvesRepository = SolvesRepositoryImpl(
                                 database = CubyDatabase.getInstance(this),
                                 ioDispatcher = Dispatchers.IO,
                             ),

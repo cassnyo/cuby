@@ -3,7 +3,6 @@ package com.cassnyo.cuby.data
 import com.cassnyo.cuby.data.database.CubyDatabase
 import com.cassnyo.cuby.data.database.entity.SolveEntity
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -12,11 +11,15 @@ import kotlinx.coroutines.withContext
 class SolvesRepositoryImpl(
     private val database: CubyDatabase,
     private val ioDispatcher: CoroutineDispatcher,
-) : TimesRepository {
+) : SolvesRepository {
 
     override suspend fun saveSolve(solve: SolveEntity): SolveEntity = withContext(ioDispatcher) {
         val id = database.solveDao().saveSolve(solve)
         solve.copy(id = id)
+    }
+
+    override suspend fun deleteSolve(solveId: Long) = withContext(ioDispatcher) {
+        database.solveDao().deleteSolve(solveId)
     }
 
     override fun observeTimes(): Flow<List<SolveEntity>> = database.solveDao().observeSolves()

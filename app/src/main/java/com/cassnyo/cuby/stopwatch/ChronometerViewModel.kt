@@ -2,7 +2,7 @@ package com.cassnyo.cuby.stopwatch
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cassnyo.cuby.data.TimesRepository
+import com.cassnyo.cuby.data.SolvesRepository
 import com.cassnyo.cuby.data.database.entity.SolveEntity
 import com.cassnyo.cuby.stopwatch.scramblegenerator.Scramble
 import com.cassnyo.cuby.stopwatch.scramblegenerator.ScrambleGenerator
@@ -18,13 +18,18 @@ import java.time.LocalDateTime
 class ChronometerViewModel(
     private val chronometer: Chronometer,
     private val scrambleGenerator: ScrambleGenerator,
-    private val timesRepository: TimesRepository,
+    private val solvesRepository: SolvesRepository,
 ) : ViewModel() {
 
-    private val scramble = MutableStateFlow<State.ScrambleState>(State.ScrambleState.Loading)
-    private val timerStarted = MutableStateFlow(false)
-    private val elapsedTimestamp = MutableStateFlow(0L)
-    private val statistics = MutableStateFlow(
+    private val scrambleFlow = MutableStateFlow<State.ScrambleState>(State.ScrambleState.Loading)
+    private val timerFlow = MutableStateFlow(
+        value = State.Timer(
+            isRunning = false,
+            elapsedTimestamp = 0L
+        )
+    )
+    private val lastSolveFlow = MutableStateFlow<State.LastSolve?>(null)
+    private val statisticsFlow = MutableStateFlow(
         value = State.Statistics(
             count = 0,
             averageOf5 = 0L,
@@ -34,14 +39,24 @@ class ChronometerViewModel(
 
     data class State(
         val scramble: ScrambleState,
-        val timerStarted: Boolean,
-        val elapsedTimestamp: Long,
+        val timer: Timer,
         val statistics: Statistics,
+        val lastSolve: LastSolve?,
     ) {
         sealed class ScrambleState {
             data object Loading : ScrambleState()
             data class Generated(val scramble: Scramble) : ScrambleState()
         }
+
+        data class Timer(
+            val isRunning: Boolean,
+            val elapsedTimestamp: Long,
+        )
+
+        data class LastSolve(
+            val id: Long,
+            val time: Long,
+        )
 
         data class Statistics(
             val count: Int,
@@ -52,15 +67,15 @@ class ChronometerViewModel(
 
     val state: StateFlow<State> =
         combine(
-            scramble,
-            timerStarted,
-            elapsedTimestamp,
-            statistics,
-        ) { scramble, timerStarted, ellapsedTimestamp, statistics ->
+            scrambleFlow,
+            timerFlow,
+            lastSolveFlow,
+            statisticsFlow,
+        ) { scramble, timer, solve, statistics ->
             State(
                 scramble = scramble,
-                timerStarted = timerStarted,
-                elapsedTimestamp = ellapsedTimestamp,
+                timer = timer,
+                lastSolve = solve,
                 statistics = statistics
             )
         }.stateIn(
@@ -79,38 +94,48 @@ class ChronometerViewModel(
     }
 
     fun onTimerClick() {
-        if (state.value.timerStarted) {
+        val timer = timerFlow.value
+        if (timer.isRunning) {
             chronometer.stop()
             viewModelScope.launch {
-                timesRepository.saveSolve(
+                val solveId = solvesRepository.saveSolve(
                     solve = SolveEntity(
-                        scramble = state.value.scramble.let {
+                        scramble = scrambleFlow.value.let {
                             it as? State.ScrambleState.Generated
                         }?.scramble?.moves.orEmpty(),
-                        time = state.value.elapsedTimestamp,
+                        time = timer.elapsedTimestamp,
                         createdAt = LocalDateTime.now(),
                     )
-                )
+                ).id
+                lastSolveFlow.update { State.LastSolve(id = solveId, time = timer.elapsedTimestamp,) }
             }
-            timerStarted.update { false }
+            timerFlow.update { it.copy(isRunning = false) }
             generateScramble()
         } else {
-            timerStarted.update { true }
+            timerFlow.update { it.copy(isRunning = true) }
             viewModelScope.launch {
                 chronometer
                     .start()
                     .collect { elapsedTime ->
-                        elapsedTimestamp.update { elapsedTime }
+                        timerFlow.update { it.copy(elapsedTimestamp = elapsedTime) }
                     }
             }
         }
     }
 
+    fun onDeleteSolveClicked(solveId: Long) {
+        viewModelScope.launch {
+            solvesRepository.deleteSolve(solveId)
+            timerFlow.update { it.copy(elapsedTimestamp = 0L) }
+            lastSolveFlow.update { null }
+        }
+    }
+
     private fun generateScramble() {
-        scramble.update { State.ScrambleState.Loading }
+        scrambleFlow.update { State.ScrambleState.Loading }
         viewModelScope.launch {
             val newScramble = scrambleGenerator.generate()
-            scramble.update {
+            scrambleFlow.update {
                 State.ScrambleState.Generated(scramble = newScramble)
             }
         }
@@ -119,9 +144,9 @@ class ChronometerViewModel(
     private fun observeStatistics() {
         viewModelScope.launch {
             combine(
-                timesRepository.observeTimes(),
-                timesRepository.observeAverageOf(count = 5),
-                timesRepository.observeAverageOf(count = 12),
+                solvesRepository.observeTimes(),
+                solvesRepository.observeAverageOf(count = 5),
+                solvesRepository.observeAverageOf(count = 12),
             ) { times, averageOf5, averageOf12 ->
                 state.value.statistics.copy(
                     count = times.size,
@@ -129,7 +154,7 @@ class ChronometerViewModel(
                     averageOf12 = averageOf12,
                 )
             }.collect { newStatistics ->
-                statistics.update { newStatistics }
+                statisticsFlow.update { newStatistics }
             }
         }
     }
@@ -137,8 +162,11 @@ class ChronometerViewModel(
     private companion object {
         fun initialState() = State(
             scramble = State.ScrambleState.Loading,
-            timerStarted = false,
-            elapsedTimestamp = 0,
+            timer = State.Timer(
+                isRunning = false,
+                elapsedTimestamp = 0L,
+            ),
+            lastSolve = null,
             statistics = State.Statistics(
                 count = 0,
                 averageOf5 = 0L,
