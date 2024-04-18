@@ -10,5 +10,6 @@ data class SolveEntity(
     val id: Long = 0,
     val scramble: String,
     val time: Long,
+    val penalty: PenaltyTypeEntity?,
     val createdAt: LocalDateTime,
 )

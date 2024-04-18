@@ -1,6 +1,7 @@
 package com.cassnyo.cuby.data
 
 import com.cassnyo.cuby.data.database.CubyDatabase
+import com.cassnyo.cuby.data.database.entity.PenaltyTypeEntity
 import com.cassnyo.cuby.data.database.entity.SolveEntity
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,10 @@ class SolvesRepositoryImpl(
 
     override suspend fun deleteSolve(solveId: Long) = withContext(ioDispatcher) {
         database.solveDao().deleteSolve(solveId)
+    }
+
+    override suspend fun setPenaltyToSolve(solveId: Long, penalty: PenaltyTypeEntity) {
+        database.solveDao().setPenalty(solveId, penalty)
     }
 
     override fun observeTimes(): Flow<List<SolveEntity>> = database.solveDao().observeSolves()

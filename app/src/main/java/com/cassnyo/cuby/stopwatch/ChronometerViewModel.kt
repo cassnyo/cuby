@@ -3,6 +3,7 @@ package com.cassnyo.cuby.stopwatch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cassnyo.cuby.data.SolvesRepository
+import com.cassnyo.cuby.data.database.entity.PenaltyTypeEntity
 import com.cassnyo.cuby.data.database.entity.SolveEntity
 import com.cassnyo.cuby.stopwatch.scramblegenerator.Scramble
 import com.cassnyo.cuby.stopwatch.scramblegenerator.ScrambleGenerator
@@ -55,8 +56,13 @@ class ChronometerViewModel(
 
         data class LastSolve(
             val id: Long,
+            val penalty: PenaltyType?,
             val time: Long,
-        )
+        ) {
+            enum class PenaltyType {
+                DNF, PLUS_TWO,
+            }
+        }
 
         data class Statistics(
             val count: Int,
@@ -104,10 +110,17 @@ class ChronometerViewModel(
                             it as? State.ScrambleState.Generated
                         }?.scramble?.moves.orEmpty(),
                         time = timer.elapsedTimestamp,
+                        penalty = null,
                         createdAt = LocalDateTime.now(),
                     )
                 ).id
-                lastSolveFlow.update { State.LastSolve(id = solveId, time = timer.elapsedTimestamp,) }
+                lastSolveFlow.update {
+                    State.LastSolve(
+                        id = solveId,
+                        time = timer.elapsedTimestamp,
+                        penalty = null,
+                    )
+                }
             }
             timerFlow.update { it.copy(isRunning = false) }
             generateScramble()
@@ -128,6 +141,24 @@ class ChronometerViewModel(
             solvesRepository.deleteSolve(solveId)
             timerFlow.update { it.copy(elapsedTimestamp = 0L) }
             lastSolveFlow.update { null }
+        }
+    }
+
+    fun onDNFSolveClicked(solveId: Long) {
+        viewModelScope.launch {
+            solvesRepository.setPenaltyToSolve(solveId, PenaltyTypeEntity.DNF)
+            lastSolveFlow.update {
+                it?.copy(penalty = State.LastSolve.PenaltyType.DNF)
+            }
+        }
+    }
+
+    fun onPlusTwoSolveClicked(solveId: Long) {
+        viewModelScope.launch {
+            solvesRepository.setPenaltyToSolve(solveId, PenaltyTypeEntity.PLUS_TWO)
+            lastSolveFlow.update {
+                it?.copy(penalty = State.LastSolve.PenaltyType.PLUS_TWO)
+            }
         }
     }
 

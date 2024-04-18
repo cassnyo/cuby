@@ -22,12 +22,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -61,7 +63,9 @@ fun ChronometerScreen(
         onGenerateScrambleClick = { viewModel.onGenerateScrambleClick() },
         onEditScrambleClick = {},
         onTimerClick = { viewModel.onTimerClick() },
-        onDeleteSolveClicked = { solveId -> viewModel.onDeleteSolveClicked(solveId) }
+        onDeleteSolveClicked = { solveId -> viewModel.onDeleteSolveClicked(solveId) },
+        onDNFSolveClicked = { solveId -> viewModel.onDNFSolveClicked(solveId) },
+        onPlusTwoSolveClicked = { solveId -> viewModel.onPlusTwoSolveClicked(solveId) },
     )
 }
 
@@ -71,6 +75,8 @@ private fun ChronometerScreenContent(
     onGenerateScrambleClick: () -> Unit,
     onEditScrambleClick: () -> Unit,
     onDeleteSolveClicked: (Long) -> Unit,
+    onDNFSolveClicked: (Long) -> Unit,
+    onPlusTwoSolveClicked: (Long) -> Unit,
     onTimerClick: () -> Unit,
 ) {
     Box(
@@ -95,6 +101,8 @@ private fun ChronometerScreenContent(
             timer = state.timer,
             lastSolve = state.lastSolve,
             onDeleteSolveClicked = onDeleteSolveClicked,
+            onDNFSolveClicked = onDNFSolveClicked,
+            onPlusTwoSolveClicked = onPlusTwoSolveClicked,
             modifier = Modifier
                 .align(Alignment.Center)
         )
@@ -228,16 +236,22 @@ private fun Timer(
     timer: State.Timer,
     lastSolve: State.LastSolve?,
     onDeleteSolveClicked: (Long) -> Unit,
+    onDNFSolveClicked: (Long) -> Unit,
+    onPlusTwoSolveClicked: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dividerSize by animateDpAsState(
         targetValue = if (timer.isRunning) 0.dp else 240.dp,
         label = "Timer divider size",
     )
-    val timeMilliseconds = if (timer.isRunning) {
-        timer.elapsedTimestamp
+    val timerText = if (lastSolve == null || timer.isRunning) {
+        formatMilliseconds(timer.elapsedTimestamp)
     } else {
-        lastSolve?.time ?: 0L
+        when (lastSolve.penalty) {
+            State.LastSolve.PenaltyType.DNF -> "DNF"
+            State.LastSolve.PenaltyType.PLUS_TWO -> "${formatMilliseconds(lastSolve.time)} +2"
+            else -> formatMilliseconds(lastSolve.time)
+        }
     }
 
     Column(
@@ -245,7 +259,7 @@ private fun Timer(
         modifier = modifier
     ) {
         Text(
-            text = formatMilliseconds(timeMilliseconds),
+            text = timerText,
             style = MaterialTheme.typography.displayLarge,
             fontWeight = FontWeight.Bold,
             color = highlightTextOnBackgroundDark,
@@ -267,13 +281,38 @@ private fun Timer(
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
-                IconButton(
-                    onClick = { onDeleteSolveClicked(lastSolve.id) }
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Close,
-                        contentDescription = "Delete solve",
-                    )
+                Row {
+                    IconButton(
+                        onClick = { onDeleteSolveClicked(lastSolve.id) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = "Delete solve",
+                            tint = iconOnBackgroundDark,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(2.dp))
+                    TextButton(
+                        onClick = { onDNFSolveClicked(lastSolve.id) }
+                    ) {
+                        Text(
+                            text = "DNF",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = iconOnBackgroundDark,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(2.dp))
+                    TextButton(
+                        onClick = { onPlusTwoSolveClicked(lastSolve.id) }
+                    ) {
+                        Text(
+                            text = "+2",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = iconOnBackgroundDark,
+                        )
+                    }
                 }
             }
         }
@@ -317,6 +356,7 @@ private fun ChronometerScreenPreview() {
                 lastSolve = State.LastSolve(
                     id = 0,
                     time = 1000L,
+                    penalty = null,
                 ),
                 statistics = State.Statistics(
                     count = 50,
@@ -328,6 +368,8 @@ private fun ChronometerScreenPreview() {
             onEditScrambleClick = {},
             onTimerClick = {},
             onDeleteSolveClicked = {},
+            onDNFSolveClicked = {},
+            onPlusTwoSolveClicked = {},
         )
     }
 }
