@@ -2,15 +2,18 @@ package com.cassnyo.cuby.stopwatch
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cassnyo.cuby.data.SolvesRepository
+import com.cassnyo.cuby.data.repository.SolvesRepository
 import com.cassnyo.cuby.data.database.entity.PenaltyTypeEntity
 import com.cassnyo.cuby.data.database.entity.SolveEntity
+import com.cassnyo.cuby.data.repository.StatisticsRepository
 import com.cassnyo.cuby.stopwatch.scramblegenerator.Scramble
 import com.cassnyo.cuby.stopwatch.scramblegenerator.ScrambleGenerator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -20,6 +23,7 @@ class ChronometerViewModel(
     private val chronometer: Chronometer,
     private val scrambleGenerator: ScrambleGenerator,
     private val solvesRepository: SolvesRepository,
+    private val statisticsRepository: StatisticsRepository,
 ) : ViewModel() {
 
     private val scrambleFlow = MutableStateFlow<State.ScrambleState>(State.ScrambleState.Loading)
@@ -33,8 +37,11 @@ class ChronometerViewModel(
     private val statisticsFlow = MutableStateFlow(
         value = State.Statistics(
             count = 0,
+            bestSolve = 0L,
             averageOf5 = 0L,
             averageOf12 = 0L,
+            averageOf50 = 0L,
+            averageOf100 = 0L,
         )
     )
 
@@ -66,8 +73,11 @@ class ChronometerViewModel(
 
         data class Statistics(
             val count: Int,
+            val bestSolve: Long,
             val averageOf5: Long,
             val averageOf12: Long,
+            val averageOf50: Long,
+            val averageOf100: Long,
         )
     }
 
@@ -174,19 +184,21 @@ class ChronometerViewModel(
 
     private fun observeStatistics() {
         viewModelScope.launch {
-            combine(
-                solvesRepository.observeTimes(),
-                solvesRepository.observeAverageOf(count = 5),
-                solvesRepository.observeAverageOf(count = 12),
-            ) { times, averageOf5, averageOf12 ->
-                state.value.statistics.copy(
-                    count = times.size,
-                    averageOf5 = averageOf5,
-                    averageOf12 = averageOf12,
-                )
-            }.collect { newStatistics ->
-                statisticsFlow.update { newStatistics }
-            }
+            statisticsRepository
+                .observeStatistics()
+                .map { statistics ->
+                    State.Statistics(
+                        count = statistics.count,
+                        bestSolve = statistics.bestSolve,
+                        averageOf5 = statistics.averageOf5,
+                        averageOf12 = statistics.averageOf12,
+                        averageOf50 = statistics.averageOf50,
+                        averageOf100 = statistics.averageOf100,
+                    )
+                }
+                .collect { statistics ->
+                    statisticsFlow.update { statistics }
+                }
         }
     }
 
@@ -200,8 +212,11 @@ class ChronometerViewModel(
             lastSolve = null,
             statistics = State.Statistics(
                 count = 0,
+                bestSolve = 0L,
                 averageOf5 = 0L,
                 averageOf12 = 0L,
+                averageOf50 = 0L,
+                averageOf100 = 0L,
             ),
         )
     }

@@ -360,8 +360,11 @@ private fun ChronometerScreenPreview() {
                 ),
                 statistics = State.Statistics(
                     count = 50,
+                    bestSolve = 20,
                     averageOf5 = 2000,
                     averageOf12 = 2000,
+                    averageOf50 = 2000,
+                    averageOf100 = 2000,
                 )
             ),
             onGenerateScrambleClick = {},

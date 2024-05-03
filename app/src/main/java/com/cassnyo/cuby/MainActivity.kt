@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.cassnyo.cuby.data.SolvesRepositoryImpl
 import com.cassnyo.cuby.data.database.CubyDatabase
+import com.cassnyo.cuby.data.repository.SolvesRepositoryImpl
+import com.cassnyo.cuby.data.repository.StatisticsRepositoryImpl
 import com.cassnyo.cuby.stopwatch.Chronometer
 import com.cassnyo.cuby.stopwatch.ChronometerScreen
 import com.cassnyo.cuby.stopwatch.ChronometerViewModel
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        val database = CubyDatabase.getInstance(this)
         setContent {
             CubyTheme {
                 // A surface container using the 'background' color from the theme
@@ -34,7 +36,11 @@ class MainActivity : ComponentActivity() {
                                 puzzle = ThreeByThreeCubePuzzle()
                             ),
                             solvesRepository = SolvesRepositoryImpl(
-                                database = CubyDatabase.getInstance(this),
+                                solveDao = database.solveDao(),
+                                ioDispatcher = Dispatchers.IO,
+                            ),
+                            statisticsRepository = StatisticsRepositoryImpl(
+                                solveDao = database.solveDao(),
                                 ioDispatcher = Dispatchers.IO,
                             ),
                         )

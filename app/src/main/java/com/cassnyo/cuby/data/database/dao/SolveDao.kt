@@ -19,5 +19,11 @@ interface SolveDao {
     suspend fun setPenalty(id: Long, penalty: PenaltyTypeEntity)
 
     @Query("SELECT * FROM solve ORDER BY createdAt DESC")
-    fun observeSolves(): Flow<List<SolveEntity>>
+    fun observeAllSolves(): Flow<List<SolveEntity>>
+
+    @Query("SELECT * FROM solve ORDER BY createdAt DESC LIMIT :count")
+    fun observeLastNSolves(count: Int): Flow<List<SolveEntity>>
+
+    @Query("SELECT * FROM solve ORDER BY time ASC LIMIT 1")
+    fun observeBestSolve(): Flow<SolveEntity>
 }
