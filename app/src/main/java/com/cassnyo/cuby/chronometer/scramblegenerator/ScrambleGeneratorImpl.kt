@@ -1,4 +1,4 @@
-package com.cassnyo.cuby.stopwatch.scramblegenerator
+package com.cassnyo.cuby.chronometer.scramblegenerator
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

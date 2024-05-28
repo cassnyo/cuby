@@ -1,23 +1,20 @@
-package com.cassnyo.cuby.stopwatch
+package com.cassnyo.cuby.chronometer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cassnyo.cuby.data.repository.SolvesRepository
-import com.cassnyo.cuby.data.database.entity.PenaltyTypeEntity
-import com.cassnyo.cuby.data.database.entity.SolveEntity
-import com.cassnyo.cuby.data.repository.StatisticsRepository
-import com.cassnyo.cuby.stopwatch.scramblegenerator.Scramble
-import com.cassnyo.cuby.stopwatch.scramblegenerator.ScrambleGenerator
+import com.cassnyo.cuby.chronometer.scramblegenerator.Scramble
+import com.cassnyo.cuby.chronometer.scramblegenerator.ScrambleGenerator
+import com.cassnyo.cuby.data.repository.solves.SolvesRepository
+import com.cassnyo.cuby.data.repository.solves.model.PenaltyType
+import com.cassnyo.cuby.data.repository.statistics.StatisticsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
 
 class ChronometerViewModel(
     private val chronometer: Chronometer,
@@ -27,23 +24,9 @@ class ChronometerViewModel(
 ) : ViewModel() {
 
     private val scrambleFlow = MutableStateFlow<State.ScrambleState>(State.ScrambleState.Loading)
-    private val timerFlow = MutableStateFlow(
-        value = State.Timer(
-            isRunning = false,
-            elapsedTimestamp = 0L
-        )
-    )
+    private val timerFlow = MutableStateFlow(initialTimer())
     private val lastSolveFlow = MutableStateFlow<State.LastSolve?>(null)
-    private val statisticsFlow = MutableStateFlow(
-        value = State.Statistics(
-            count = 0,
-            bestSolve = 0L,
-            averageOf5 = 0L,
-            averageOf12 = 0L,
-            averageOf50 = 0L,
-            averageOf100 = 0L,
-        )
-    )
+    private val statisticsFlow = MutableStateFlow(initialStatistics())
 
     data class State(
         val scramble: ScrambleState,
@@ -74,6 +57,7 @@ class ChronometerViewModel(
         data class Statistics(
             val count: Int,
             val bestSolve: Long,
+            val median: Long,
             val averageOf5: Long,
             val averageOf12: Long,
             val averageOf50: Long,
@@ -115,14 +99,10 @@ class ChronometerViewModel(
             chronometer.stop()
             viewModelScope.launch {
                 val solveId = solvesRepository.saveSolve(
-                    solve = SolveEntity(
-                        scramble = scrambleFlow.value.let {
-                            it as? State.ScrambleState.Generated
-                        }?.scramble?.moves.orEmpty(),
-                        time = timer.elapsedTimestamp,
-                        penalty = null,
-                        createdAt = LocalDateTime.now(),
-                    )
+                    scramble = scrambleFlow.value.let {
+                        it as? State.ScrambleState.Generated
+                    }?.scramble?.moves.orEmpty(),
+                    time = timer.elapsedTimestamp,
                 ).id
                 lastSolveFlow.update {
                     State.LastSolve(
@@ -156,7 +136,7 @@ class ChronometerViewModel(
 
     fun onDNFSolveClicked(solveId: Long) {
         viewModelScope.launch {
-            solvesRepository.setPenaltyToSolve(solveId, PenaltyTypeEntity.DNF)
+            solvesRepository.setPenaltyToSolve(solveId, PenaltyType.DNF)
             lastSolveFlow.update {
                 it?.copy(penalty = State.LastSolve.PenaltyType.DNF)
             }
@@ -165,7 +145,7 @@ class ChronometerViewModel(
 
     fun onPlusTwoSolveClicked(solveId: Long) {
         viewModelScope.launch {
-            solvesRepository.setPenaltyToSolve(solveId, PenaltyTypeEntity.PLUS_TWO)
+            solvesRepository.setPenaltyToSolve(solveId, PenaltyType.PLUS_TWO)
             lastSolveFlow.update {
                 it?.copy(penalty = State.LastSolve.PenaltyType.PLUS_TWO)
             }
@@ -190,6 +170,7 @@ class ChronometerViewModel(
                     State.Statistics(
                         count = statistics.count,
                         bestSolve = statistics.bestSolve,
+                        median = statistics.median,
                         averageOf5 = statistics.averageOf5,
                         averageOf12 = statistics.averageOf12,
                         averageOf50 = statistics.averageOf50,
@@ -205,19 +186,24 @@ class ChronometerViewModel(
     private companion object {
         fun initialState() = State(
             scramble = State.ScrambleState.Loading,
-            timer = State.Timer(
-                isRunning = false,
-                elapsedTimestamp = 0L,
-            ),
+            timer = initialTimer(),
             lastSolve = null,
-            statistics = State.Statistics(
-                count = 0,
-                bestSolve = 0L,
-                averageOf5 = 0L,
-                averageOf12 = 0L,
-                averageOf50 = 0L,
-                averageOf100 = 0L,
-            ),
+            statistics = initialStatistics(),
+        )
+
+        fun initialTimer() = State.Timer(
+            isRunning = false,
+            elapsedTimestamp = 0L
+        )
+
+        fun initialStatistics() = State.Statistics(
+            count = 0,
+            bestSolve = 0L,
+            median = 0L,
+            averageOf5 = 0L,
+            averageOf12 = 0L,
+            averageOf50 = 0L,
+            averageOf100 = 0L,
         )
     }
 }

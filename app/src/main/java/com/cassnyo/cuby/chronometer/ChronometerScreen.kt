@@ -1,4 +1,4 @@
-package com.cassnyo.cuby.stopwatch
+package com.cassnyo.cuby.chronometer
 
 import android.graphics.Canvas
 import androidx.compose.animation.AnimatedVisibility
@@ -9,6 +9,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -37,14 +37,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
-import com.cassnyo.cuby.stopwatch.ChronometerViewModel.State
-import com.cassnyo.cuby.stopwatch.ChronometerViewModel.State.ScrambleState
-import com.cassnyo.cuby.stopwatch.scramblegenerator.Scramble
+import com.cassnyo.cuby.R
+import com.cassnyo.cuby.chronometer.ChronometerViewModel.State
+import com.cassnyo.cuby.chronometer.ChronometerViewModel.State.ScrambleState
+import com.cassnyo.cuby.chronometer.scramblegenerator.Scramble
 import com.cassnyo.cuby.ui.theme.CubyTheme
 import com.cassnyo.cuby.ui.theme.highlightTextOnBackgroundDark
 import com.cassnyo.cuby.ui.theme.iconOnBackgroundDark
@@ -287,7 +289,7 @@ private fun Timer(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
-                            contentDescription = "Delete solve",
+                            contentDescription = stringResource(R.string.chronometer_timer_button_delete),
                             tint = iconOnBackgroundDark,
                         )
                     }
@@ -296,7 +298,7 @@ private fun Timer(
                         onClick = { onDNFSolveClicked(lastSolve.id) }
                     ) {
                         Text(
-                            text = "DNF",
+                            text = stringResource(R.string.chronometer_timer_button_dnf),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.ExtraBold,
                             color = iconOnBackgroundDark,
@@ -307,7 +309,7 @@ private fun Timer(
                         onClick = { onPlusTwoSolveClicked(lastSolve.id) }
                     ) {
                         Text(
-                            text = "+2",
+                            text = stringResource(R.string.chronometer_timer_button_plus_two),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.ExtraBold,
                             color = iconOnBackgroundDark,
@@ -324,22 +326,61 @@ private fun Statistics(
     statistics: State.Statistics,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier,
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = 16.dp,
+                vertical = 8.dp,
+            ),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        Column {
+            StatisticsRow(label = stringResource(R.string.chronometer_statistics_count), value = statistics.count.toString())
+            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_median), value = statistics.median)
+            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_best), value = statistics.bestSolve)
+        }
+        Column(
+            horizontalAlignment = Alignment.End,
+        ) {
+            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao5), value = statistics.averageOf5)
+            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao12), value = statistics.averageOf12)
+            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao50), value = statistics.averageOf50)
+            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao100), value = statistics.averageOf100)
+        }
+    }
+}
+
+@Composable
+private fun StatisticsRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier = modifier) {
         Text(
-            text = "Count: ${statistics.count}",
+            text = "${label}: ",
             color = textOnBackground,
         )
         Text(
-            text = "Ao5: ${formatMilliseconds(statistics.averageOf5)}",
-            color = textOnBackground,
-        )
-        Text(
-            text = "Ao12: ${formatMilliseconds(statistics.averageOf12)}",
-            color = textOnBackground,
+            text = value,
+            fontWeight = FontWeight.ExtraBold,
+            color = highlightTextOnBackgroundDark,
         )
     }
+}
+
+@Composable
+private fun StatisticsTimedRow(
+    label: String,
+    value: Long,
+    modifier: Modifier = Modifier,
+) {
+    StatisticsRow(
+        label = label,
+        value = formatMilliseconds(value),
+        modifier = modifier,
+    )
 }
 
 @Preview
@@ -361,6 +402,7 @@ private fun ChronometerScreenPreview() {
                 statistics = State.Statistics(
                     count = 50,
                     bestSolve = 20,
+                    median = 2000,
                     averageOf5 = 2000,
                     averageOf12 = 2000,
                     averageOf50 = 2000,

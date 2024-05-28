@@ -1,4 +1,4 @@
-package com.cassnyo.cuby.stopwatch
+package com.cassnyo.cuby.chronometer
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -7,8 +7,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
-import kotlin.concurrent.fixedRateTimer
-import kotlin.time.Duration
 
 class Chronometer {
 

@@ -25,5 +25,5 @@ interface SolveDao {
     fun observeLastNSolves(count: Int): Flow<List<SolveEntity>>
 
     @Query("SELECT * FROM solve ORDER BY time ASC LIMIT 1")
-    fun observeBestSolve(): Flow<SolveEntity>
+    fun observeBestSolve(): Flow<SolveEntity?>
 }

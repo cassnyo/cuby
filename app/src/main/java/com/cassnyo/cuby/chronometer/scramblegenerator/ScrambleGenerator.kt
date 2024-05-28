@@ -1,4 +1,4 @@
-package com.cassnyo.cuby.stopwatch.scramblegenerator
+package com.cassnyo.cuby.chronometer.scramblegenerator
 
 interface ScrambleGenerator {
     suspend fun generate(): Scramble

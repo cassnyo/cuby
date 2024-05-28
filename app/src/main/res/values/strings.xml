@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Cuby</string>
+
+    // Chronometer screen
+    <string name="chronometer_timer_button_dnf">DNF</string>
+    <string name="chronometer_timer_button_plus_two">+2</string>
+    <string name="chronometer_timer_button_delete">Delete solve</string>
+    <string name="chronometer_statistics_count">Count</string>
+    <string name="chronometer_statistics_median">Median</string>
+    <string name="chronometer_statistics_best">Best</string>
+    <string name="chronometer_statistics_ao5">Ao5</string>
+    <string name="chronometer_statistics_ao12">Ao12</string>
+    <string name="chronometer_statistics_ao50">Ao50</string>
+    <string name="chronometer_statistics_ao100">Ao100</string>
+
 </resources>
