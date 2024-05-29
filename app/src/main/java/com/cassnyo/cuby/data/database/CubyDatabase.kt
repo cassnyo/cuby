@@ -12,6 +12,7 @@ import com.cassnyo.cuby.data.database.entity.SolveEntity
 @Database(
     entities = [SolveEntity::class],
     version = 1,
+    exportSchema = false,
 )
 @TypeConverters(
     LocalDateTimeConverter::class,
@@ -23,20 +24,11 @@ abstract class CubyDatabase : RoomDatabase() {
 
         private const val DATABASE_NAME = "cuby.db"
 
-        @Volatile
-        private var instance: CubyDatabase? = null
-
-        fun getInstance(context: Context): CubyDatabase =
-            instance ?: synchronized(this) {
-                instance ?: createDatabase(context).also { instance = it }
-            }
-
-        private fun createDatabase(context: Context) =
+        fun buildDatabase(context: Context) =
             Room.databaseBuilder(
                 context = context,
                 klass = CubyDatabase::class.java,
                 name = DATABASE_NAME,
-            )
-                .build()
+            ).build()
     }
 }

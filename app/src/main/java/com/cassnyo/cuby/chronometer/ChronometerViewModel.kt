@@ -15,8 +15,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ChronometerViewModel(
+class ChronometerViewModel @Inject constructor(
     private val chronometer: Chronometer,
     private val scrambleGenerator: ScrambleGenerator,
     private val solvesRepository: SolvesRepository,

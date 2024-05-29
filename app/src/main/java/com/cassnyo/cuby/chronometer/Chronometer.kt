@@ -7,8 +7,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class Chronometer {
+class Chronometer @Inject constructor() {
 
     private var timerJob: Job? = null
     private var startTime: Long = 0L

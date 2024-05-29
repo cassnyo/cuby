@@ -1,5 +1,6 @@
 package com.cassnyo.cuby.data.repository.statistics
 
+import com.cassnyo.cuby.common.di.IoDispatcher
 import com.cassnyo.cuby.data.database.dao.SolveDao
 import com.cassnyo.cuby.data.database.entity.SolveEntity
 import com.cassnyo.cuby.data.repository.statistics.model.Statistics
@@ -7,14 +8,15 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import javax.inject.Inject
 
 interface StatisticsRepository {
     fun observeStatistics(): Flow<Statistics>
 }
 
-class StatisticsRepositoryImpl(
+class StatisticsRepositoryImpl @Inject constructor(
     private val solveDao: SolveDao,
-    private val ioDispatcher: CoroutineDispatcher,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : StatisticsRepository {
 
     private data class Averages(

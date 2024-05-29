@@ -1,5 +1,6 @@
 package com.cassnyo.cuby.data.repository.solves
 
+import com.cassnyo.cuby.common.di.IoDispatcher
 import com.cassnyo.cuby.data.database.dao.SolveDao
 import com.cassnyo.cuby.data.database.entity.SolveEntity
 import com.cassnyo.cuby.data.repository.solves.mapper.toData
@@ -9,6 +10,7 @@ import com.cassnyo.cuby.data.repository.solves.model.Solve
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
+import javax.inject.Inject
 
 interface SolvesRepository {
     suspend fun saveSolve(scramble: String, time: Long): Solve
@@ -16,9 +18,9 @@ interface SolvesRepository {
     suspend fun setPenaltyToSolve(solveId: Long, penalty: PenaltyType)
 }
 
-class SolvesRepositoryImpl(
+class SolvesRepositoryImpl @Inject constructor(
     private val solveDao: SolveDao,
-    private val ioDispatcher: CoroutineDispatcher,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : SolvesRepository {
 
     override suspend fun saveSolve(scramble: String, time: Long): Solve = withContext(ioDispatcher) {

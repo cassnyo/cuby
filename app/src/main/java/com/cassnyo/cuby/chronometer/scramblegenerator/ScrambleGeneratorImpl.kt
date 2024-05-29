@@ -4,8 +4,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.worldcubeassociation.tnoodle.scrambles.Puzzle
 import org.worldcubeassociation.tnoodle.svglite.Color
+import javax.inject.Inject
 
-class ScrambleGeneratorImpl(
+class ScrambleGeneratorImpl @Inject constructor(
     private val puzzle: Puzzle,
 ) : ScrambleGenerator {
 
