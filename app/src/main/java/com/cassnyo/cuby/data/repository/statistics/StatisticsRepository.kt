@@ -65,6 +65,8 @@ class StatisticsRepositoryImpl @Inject constructor(
 }
 
 private fun List<Long>.median(): Long {
+    if (isEmpty()) return 0L
+
     val sorted = sorted()
     val middle = size / 2
     return if (size % 2 == 0) {

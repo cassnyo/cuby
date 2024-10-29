@@ -7,6 +7,7 @@ import com.cassnyo.cuby.chronometer.scramblegenerator.ScrambleGenerator
 import com.cassnyo.cuby.data.repository.solves.SolvesRepository
 import com.cassnyo.cuby.data.repository.solves.model.PenaltyType
 import com.cassnyo.cuby.data.repository.statistics.StatisticsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@HiltViewModel
 class ChronometerViewModel @Inject constructor(
     private val chronometer: Chronometer,
     private val scrambleGenerator: ScrambleGenerator,

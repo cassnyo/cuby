@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.cassnyo.cuby.R
 import com.cassnyo.cuby.chronometer.ChronometerViewModel.State
 import com.cassnyo.cuby.chronometer.ChronometerViewModel.State.ScrambleState
@@ -55,9 +56,8 @@ import com.caverock.androidsvg.SVG
 import kotlin.math.roundToInt
 
 @Composable
-fun ChronometerScreen(
-    viewModel: ChronometerViewModel,
-) {
+fun ChronometerScreen() {
+    val viewModel = hiltViewModel<ChronometerViewModel>()
     val state by viewModel.state.collectAsState()
 
     ChronometerScreenContent(

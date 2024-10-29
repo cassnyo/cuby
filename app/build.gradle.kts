@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.ksp)
     alias(libs.plugins.dagger.hilt)
+    alias(libs.plugins.kotlinx.serialization)
 }
 
 android {
@@ -57,6 +58,7 @@ dependencies {
     implementation(libs.bundles.lifecycle)
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))
+    implementation(libs.navigation.compose)
     implementation(libs.ui)
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
@@ -68,6 +70,9 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
+
+    implementation(libs.kotlinx.serialization)
+    implementation(libs.hilt.navigation.compose)
 
     implementation(libs.dagger.hilt.android)
     ksp(libs.dagger.hilt.android.compiler)
