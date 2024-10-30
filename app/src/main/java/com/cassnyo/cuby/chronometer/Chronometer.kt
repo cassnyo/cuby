@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -13,26 +13,32 @@ class Chronometer @Inject constructor() {
 
     private var timerJob: Job? = null
     private var startTime: Long = 0L
-    private val elapsedTime = MutableSharedFlow<Long>()
+    private val elapsedTime = MutableStateFlow(0L)
 
+    fun start() {
+        if (isRunning()) throw IllegalStateException("Chronometer is already running")
 
-    fun start(): Flow<Long> {
-        if (timerJob == null) {
-            startTime = System.currentTimeMillis()
-            timerJob = CoroutineScope(Dispatchers.Default).launch {
-                while(true) {
-                    elapsedTime.emit(System.currentTimeMillis() - startTime)
-                    delay(PERIOD_MILLISECONDS)
-                }
+        startTime = System.currentTimeMillis()
+        timerJob = CoroutineScope(Dispatchers.Default).launch {
+            while(true) {
+                elapsedTime.tryEmit(System.currentTimeMillis() - startTime)
+                delay(PERIOD_MILLISECONDS)
             }
         }
-        return elapsedTime
     }
 
     fun stop() {
         timerJob?.cancel()
         timerJob = null
     }
+
+    fun reset() {
+        elapsedTime.tryEmit(0L)
+    }
+
+    fun isRunning() = timerJob?.isActive ?: false
+
+    fun elapsedTimeFlow(): Flow<Long> = elapsedTime
 
      private companion object {
         const val PERIOD_MILLISECONDS = 10L

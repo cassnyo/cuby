@@ -48,11 +48,14 @@ import com.cassnyo.cuby.R
 import com.cassnyo.cuby.chronometer.ChronometerViewModel.State
 import com.cassnyo.cuby.chronometer.ChronometerViewModel.State.ScrambleState
 import com.cassnyo.cuby.chronometer.scramblegenerator.Scramble
+import com.cassnyo.cuby.data.repository.solves.model.PenaltyType
+import com.cassnyo.cuby.data.repository.solves.model.Solve
 import com.cassnyo.cuby.ui.theme.CubyTheme
 import com.cassnyo.cuby.ui.theme.highlightTextOnBackgroundDark
 import com.cassnyo.cuby.ui.theme.iconOnBackgroundDark
 import com.cassnyo.cuby.ui.theme.textOnBackground
 import com.caverock.androidsvg.SVG
+import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
 @Composable
@@ -236,7 +239,7 @@ private fun ScrambleImage(
 @Composable
 private fun Timer(
     timer: State.Timer,
-    lastSolve: State.LastSolve?,
+    lastSolve: Solve?,
     onDeleteSolveClicked: (Long) -> Unit,
     onDNFSolveClicked: (Long) -> Unit,
     onPlusTwoSolveClicked: (Long) -> Unit,
@@ -250,8 +253,8 @@ private fun Timer(
         formatMilliseconds(timer.elapsedTimestamp)
     } else {
         when (lastSolve.penalty) {
-            State.LastSolve.PenaltyType.DNF -> "DNF"
-            State.LastSolve.PenaltyType.PLUS_TWO -> "${formatMilliseconds(lastSolve.time)} +2"
+            PenaltyType.DNF -> "DNF"
+            PenaltyType.PLUS_TWO -> "${formatMilliseconds(lastSolve.time)} +2"
             else -> formatMilliseconds(lastSolve.time)
         }
     }
@@ -394,10 +397,12 @@ private fun ChronometerScreenPreview() {
                     isRunning = false,
                     elapsedTimestamp = 1000L,
                 ),
-                lastSolve = State.LastSolve(
+                lastSolve = Solve(
                     id = 0,
+                    scramble = "",
                     time = 1000L,
                     penalty = null,
+                    createdAt = LocalDateTime.now(),
                 ),
                 statistics = State.Statistics(
                     count = 50,

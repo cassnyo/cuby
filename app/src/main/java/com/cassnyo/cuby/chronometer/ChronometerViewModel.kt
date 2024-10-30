@@ -6,6 +6,7 @@ import com.cassnyo.cuby.chronometer.scramblegenerator.Scramble
 import com.cassnyo.cuby.chronometer.scramblegenerator.ScrambleGenerator
 import com.cassnyo.cuby.data.repository.solves.SolvesRepository
 import com.cassnyo.cuby.data.repository.solves.model.PenaltyType
+import com.cassnyo.cuby.data.repository.solves.model.Solve
 import com.cassnyo.cuby.data.repository.statistics.StatisticsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,15 +28,13 @@ class ChronometerViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val scrambleFlow = MutableStateFlow<State.ScrambleState>(State.ScrambleState.Loading)
-    private val timerFlow = MutableStateFlow(initialTimer())
-    private val lastSolveFlow = MutableStateFlow<State.LastSolve?>(null)
-    private val statisticsFlow = MutableStateFlow(initialStatistics())
+    private val lastSolveFlow = MutableStateFlow<Solve?>(null)
 
     data class State(
         val scramble: ScrambleState,
         val timer: Timer,
         val statistics: Statistics,
-        val lastSolve: LastSolve?,
+        val lastSolve: Solve?,
     ) {
         sealed class ScrambleState {
             data object Loading : ScrambleState()
@@ -46,16 +45,6 @@ class ChronometerViewModel @Inject constructor(
             val isRunning: Boolean,
             val elapsedTimestamp: Long,
         )
-
-        data class LastSolve(
-            val id: Long,
-            val penalty: PenaltyType?,
-            val time: Long,
-        ) {
-            enum class PenaltyType {
-                DNF, PLUS_TWO,
-            }
-        }
 
         data class Statistics(
             val count: Int,
@@ -71,10 +60,15 @@ class ChronometerViewModel @Inject constructor(
     val state: StateFlow<State> =
         combine(
             scrambleFlow,
-            timerFlow,
+            chronometer.elapsedTimeFlow(),
             lastSolveFlow,
-            statisticsFlow,
-        ) { scramble, timer, solve, statistics ->
+            statisticsFlow(),
+        ) { scramble, elapsedTime, solve, statistics ->
+            val timer = State.Timer(
+                isRunning = chronometer.isRunning(),
+                elapsedTimestamp = elapsedTime,
+            )
+
             State(
                 scramble = scramble,
                 timer = timer,
@@ -89,7 +83,6 @@ class ChronometerViewModel @Inject constructor(
 
     init {
         generateScramble()
-        observeStatistics()
     }
 
     fun onGenerateScrambleClick() {
@@ -97,43 +90,22 @@ class ChronometerViewModel @Inject constructor(
     }
 
     fun onTimerClick() {
-        val timer = timerFlow.value
-        if (timer.isRunning) {
+        if (chronometer.isRunning()) {
             chronometer.stop()
-            viewModelScope.launch {
-                val solveId = solvesRepository.saveSolve(
-                    scramble = scrambleFlow.value.let {
-                        it as? State.ScrambleState.Generated
-                    }?.scramble?.moves.orEmpty(),
-                    time = timer.elapsedTimestamp,
-                ).id
-                lastSolveFlow.update {
-                    State.LastSolve(
-                        id = solveId,
-                        time = timer.elapsedTimestamp,
-                        penalty = null,
-                    )
-                }
-            }
-            timerFlow.update { it.copy(isRunning = false) }
-            generateScramble()
+            saveSolve(
+                scramble = (state.value.scramble as State.ScrambleState.Generated).scramble,
+                time = state.value.timer.elapsedTimestamp,
+            )
         } else {
-            timerFlow.update { it.copy(isRunning = true) }
-            viewModelScope.launch {
-                chronometer
-                    .start()
-                    .collect { elapsedTime ->
-                        timerFlow.update { it.copy(elapsedTimestamp = elapsedTime) }
-                    }
-            }
+            chronometer.start()
         }
     }
 
     fun onDeleteSolveClicked(solveId: Long) {
         viewModelScope.launch {
             solvesRepository.deleteSolve(solveId)
-            timerFlow.update { it.copy(elapsedTimestamp = 0L) }
             lastSolveFlow.update { null }
+            chronometer.reset()
         }
     }
 
@@ -141,7 +113,7 @@ class ChronometerViewModel @Inject constructor(
         viewModelScope.launch {
             solvesRepository.setPenaltyToSolve(solveId, PenaltyType.DNF)
             lastSolveFlow.update {
-                it?.copy(penalty = State.LastSolve.PenaltyType.DNF)
+                it?.copy(penalty = PenaltyType.DNF)
             }
         }
     }
@@ -150,7 +122,7 @@ class ChronometerViewModel @Inject constructor(
         viewModelScope.launch {
             solvesRepository.setPenaltyToSolve(solveId, PenaltyType.PLUS_TWO)
             lastSolveFlow.update {
-                it?.copy(penalty = State.LastSolve.PenaltyType.PLUS_TWO)
+                it?.copy(penalty = PenaltyType.PLUS_TWO)
             }
         }
     }
@@ -165,25 +137,30 @@ class ChronometerViewModel @Inject constructor(
         }
     }
 
-    private fun observeStatistics() {
-        viewModelScope.launch {
-            statisticsRepository
-                .observeStatistics()
-                .map { statistics ->
-                    State.Statistics(
-                        count = statistics.count,
-                        bestSolve = statistics.bestSolve,
-                        median = statistics.median,
-                        averageOf5 = statistics.averageOf5,
-                        averageOf12 = statistics.averageOf12,
-                        averageOf50 = statistics.averageOf50,
-                        averageOf100 = statistics.averageOf100,
-                    )
-                }
-                .collect { statistics ->
-                    statisticsFlow.update { statistics }
-                }
-        }
+    private fun statisticsFlow() =
+        statisticsRepository
+            .observeStatistics()
+            .map { statistics ->
+                State.Statistics(
+                    count = statistics.count,
+                    bestSolve = statistics.bestSolve,
+                    median = statistics.median,
+                    averageOf5 = statistics.averageOf5,
+                    averageOf12 = statistics.averageOf12,
+                    averageOf50 = statistics.averageOf50,
+                    averageOf100 = statistics.averageOf100,
+                )
+            }
+
+    private fun saveSolve(
+        scramble: Scramble,
+        time: Long,
+    ) = viewModelScope.launch {
+        val solve = solvesRepository.saveSolve(
+            scramble = scramble.moves,
+            time = time,
+        )
+        lastSolveFlow.tryEmit(solve)
     }
 
     private companion object {
