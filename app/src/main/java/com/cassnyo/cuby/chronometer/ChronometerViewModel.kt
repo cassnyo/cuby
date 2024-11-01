@@ -8,12 +8,12 @@ import com.cassnyo.cuby.data.repository.solves.SolvesRepository
 import com.cassnyo.cuby.data.repository.solves.model.PenaltyType
 import com.cassnyo.cuby.data.repository.solves.model.Solve
 import com.cassnyo.cuby.data.repository.statistics.StatisticsRepository
+import com.cassnyo.cuby.data.repository.statistics.model.Statistics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -33,7 +33,7 @@ class ChronometerViewModel @Inject constructor(
     data class State(
         val scramble: ScrambleState,
         val timer: Timer,
-        val statistics: Statistics,
+        val statistics: Statistics?,
         val lastSolve: Solve?,
     ) {
         sealed class ScrambleState {
@@ -44,16 +44,6 @@ class ChronometerViewModel @Inject constructor(
         data class Timer(
             val isRunning: Boolean,
             val elapsedTimestamp: Long,
-        )
-
-        data class Statistics(
-            val count: Int,
-            val bestSolve: Long,
-            val median: Long,
-            val averageOf5: Long,
-            val averageOf12: Long,
-            val averageOf50: Long,
-            val averageOf100: Long,
         )
     }
 
@@ -137,20 +127,7 @@ class ChronometerViewModel @Inject constructor(
         }
     }
 
-    private fun statisticsFlow() =
-        statisticsRepository
-            .observeStatistics()
-            .map { statistics ->
-                State.Statistics(
-                    count = statistics.count,
-                    bestSolve = statistics.bestSolve,
-                    median = statistics.median,
-                    averageOf5 = statistics.averageOf5,
-                    averageOf12 = statistics.averageOf12,
-                    averageOf50 = statistics.averageOf50,
-                    averageOf100 = statistics.averageOf100,
-                )
-            }
+    private fun statisticsFlow() = statisticsRepository.observeStatistics()
 
     private fun saveSolve(
         scramble: Scramble,
@@ -168,22 +145,12 @@ class ChronometerViewModel @Inject constructor(
             scramble = State.ScrambleState.Loading,
             timer = initialTimer(),
             lastSolve = null,
-            statistics = initialStatistics(),
+            statistics = null,
         )
 
         fun initialTimer() = State.Timer(
             isRunning = false,
             elapsedTimestamp = 0L
-        )
-
-        fun initialStatistics() = State.Statistics(
-            count = 0,
-            bestSolve = 0L,
-            median = 0L,
-            averageOf5 = 0L,
-            averageOf12 = 0L,
-            averageOf50 = 0L,
-            averageOf100 = 0L,
         )
     }
 }

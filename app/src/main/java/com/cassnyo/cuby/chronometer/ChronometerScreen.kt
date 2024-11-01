@@ -50,6 +50,7 @@ import com.cassnyo.cuby.chronometer.ChronometerViewModel.State.ScrambleState
 import com.cassnyo.cuby.chronometer.scramblegenerator.Scramble
 import com.cassnyo.cuby.data.repository.solves.model.PenaltyType
 import com.cassnyo.cuby.data.repository.solves.model.Solve
+import com.cassnyo.cuby.data.repository.statistics.model.Statistics
 import com.cassnyo.cuby.ui.theme.CubyTheme
 import com.cassnyo.cuby.ui.theme.highlightTextOnBackgroundDark
 import com.cassnyo.cuby.ui.theme.iconOnBackgroundDark
@@ -118,7 +119,7 @@ private fun ChronometerScreenContent(
             exit = slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
-            Statistics(
+            Footer(
                 scramble = state.scramble,
                 statistics = state.statistics,
             )
@@ -322,9 +323,42 @@ private fun Timer(
 }
 
 @Composable
-private fun Statistics(
+private fun LeftStatistics(
+    count: Int,
+    median: Long,
+    bestSolve: Long,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        StatisticsRow(label = stringResource(R.string.chronometer_statistics_count), value = count.toString())
+        StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_median), value = median)
+        StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_best), value = bestSolve)
+    }
+}
+
+@Composable
+private fun RightStatistics(
+    averageOf5: Long,
+    averageOf12: Long,
+    averageOf50: Long,
+    averageOf100: Long,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        horizontalAlignment = Alignment.End,
+        modifier = modifier,
+    ) {
+        StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao5), value = averageOf5)
+        StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao12), value = averageOf12)
+        StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao50), value = averageOf50)
+        StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao100), value = averageOf100)
+    }
+}
+
+@Composable
+private fun Footer(
     scramble: ScrambleState,
-    statistics: State.Statistics,
+    statistics: Statistics?,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -337,10 +371,12 @@ private fun Statistics(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom,
     ) {
-        Column {
-            StatisticsRow(label = stringResource(R.string.chronometer_statistics_count), value = statistics.count.toString())
-            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_median), value = statistics.median)
-            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_best), value = statistics.bestSolve)
+        statistics?.let {
+            LeftStatistics(
+                count = statistics.count,
+                median = statistics.median,
+                bestSolve = statistics.bestSolve,
+            )
         }
 
         when (scramble) {
@@ -354,13 +390,13 @@ private fun Statistics(
                 )
         }
 
-        Column(
-            horizontalAlignment = Alignment.End,
-        ) {
-            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao5), value = statistics.averageOf5)
-            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao12), value = statistics.averageOf12)
-            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao50), value = statistics.averageOf50)
-            StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_ao100), value = statistics.averageOf100)
+        statistics?.let {
+            RightStatistics(
+                averageOf5 = statistics.averageOf5,
+                averageOf12 = statistics.averageOf12,
+                averageOf50 = statistics.averageOf50,
+                averageOf100 = statistics.averageOf100,
+            )
         }
     }
 }
@@ -414,7 +450,7 @@ private fun ChronometerScreenPreview() {
                     penalty = null,
                     createdAt = LocalDateTime.now(),
                 ),
-                statistics = State.Statistics(
+                statistics = Statistics(
                     count = 50,
                     bestSolve = 20,
                     median = 2000,
