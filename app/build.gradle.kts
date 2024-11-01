@@ -71,6 +71,9 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
 
+    implementation(libs.window.manager)
+    testImplementation(libs.window.manager.testing)
+
     implementation(libs.kotlinx.serialization)
     implementation(libs.hilt.navigation.compose)
 

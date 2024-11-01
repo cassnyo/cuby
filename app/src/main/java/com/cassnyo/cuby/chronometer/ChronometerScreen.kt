@@ -119,6 +119,7 @@ private fun ChronometerScreenContent(
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             Statistics(
+                scramble = state.scramble,
                 statistics = state.statistics,
             )
         }
@@ -182,10 +183,6 @@ private fun ScrambleSequence(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxWidth(),
     ) {
-        // TODO Generate the image with a bigger size
-        // ScrambleImage(
-        //     imageSvg = scramble.image,
-        // )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = scramble.moves,
@@ -326,6 +323,7 @@ private fun Timer(
 
 @Composable
 private fun Statistics(
+    scramble: ScrambleState,
     statistics: State.Statistics,
     modifier: Modifier = Modifier,
 ) {
@@ -336,13 +334,26 @@ private fun Statistics(
                 horizontal = 16.dp,
                 vertical = 8.dp,
             ),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom,
     ) {
         Column {
             StatisticsRow(label = stringResource(R.string.chronometer_statistics_count), value = statistics.count.toString())
             StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_median), value = statistics.median)
             StatisticsTimedRow(label = stringResource(R.string.chronometer_statistics_best), value = statistics.bestSolve)
         }
+
+        when (scramble) {
+            is ScrambleState.Loading ->
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(bottom = 20.dp),
+                )
+            is ScrambleState.Generated ->
+                ScrambleImage(
+                    imageSvg = scramble.scramble.image,
+                )
+        }
+
         Column(
             horizontalAlignment = Alignment.End,
         ) {
@@ -367,7 +378,6 @@ private fun StatisticsRow(
         )
         Text(
             text = value,
-            fontWeight = FontWeight.ExtraBold,
             color = highlightTextOnBackgroundDark,
         )
     }
