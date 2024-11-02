@@ -10,15 +10,20 @@ import com.cassnyo.cuby.data.repository.solves.model.Solve
 import com.cassnyo.cuby.data.repository.statistics.StatisticsRepository
 import com.cassnyo.cuby.data.repository.statistics.model.Statistics
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ChronometerViewModel @Inject constructor(
     private val chronometer: Chronometer,
@@ -28,7 +33,7 @@ class ChronometerViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val scrambleFlow = MutableStateFlow<State.ScrambleState>(State.ScrambleState.Loading)
-    private val lastSolveFlow = MutableStateFlow<Solve?>(null)
+    private val lastSolveIdFlow = MutableStateFlow<Long?>(null)
 
     data class State(
         val scramble: ScrambleState,
@@ -43,7 +48,7 @@ class ChronometerViewModel @Inject constructor(
 
         data class Timer(
             val isRunning: Boolean,
-            val elapsedTimestamp: Long,
+            val elapsedTime: Long,
         )
     }
 
@@ -51,18 +56,18 @@ class ChronometerViewModel @Inject constructor(
         combine(
             scrambleFlow,
             chronometer.elapsedTimeFlow(),
-            lastSolveFlow,
+            lastSolveFlow(),
             statisticsFlow(),
-        ) { scramble, elapsedTime, solve, statistics ->
+        ) { scramble, elapsedTime, lastSolve, statistics ->
             val timer = State.Timer(
                 isRunning = chronometer.isRunning(),
-                elapsedTimestamp = elapsedTime,
+                elapsedTime = elapsedTime,
             )
 
             State(
                 scramble = scramble,
                 timer = timer,
-                lastSolve = solve,
+                lastSolve = lastSolve,
                 statistics = statistics
             )
         }.stateIn(
@@ -84,17 +89,20 @@ class ChronometerViewModel @Inject constructor(
             chronometer.stop()
             saveSolve(
                 scramble = (state.value.scramble as State.ScrambleState.Generated).scramble,
-                time = state.value.timer.elapsedTimestamp,
+                time = state.value.timer.elapsedTime,
             )
         } else {
             chronometer.start()
+            // Clear lastSolveId so when the chronometer gets stopped we won't show the previous
+            // solve to the user while the new solve is being fetched
+            lastSolveIdFlow.tryEmit(null)
         }
     }
 
     fun onDeleteSolveClicked(solveId: Long) {
         viewModelScope.launch {
             solvesRepository.deleteSolve(solveId)
-            lastSolveFlow.update { null }
+            lastSolveIdFlow.tryEmit(null)
             chronometer.reset()
         }
     }
@@ -102,18 +110,12 @@ class ChronometerViewModel @Inject constructor(
     fun onDNFSolveClicked(solveId: Long) {
         viewModelScope.launch {
             solvesRepository.setPenaltyToSolve(solveId, PenaltyType.DNF)
-            lastSolveFlow.update {
-                it?.copy(penalty = PenaltyType.DNF)
-            }
         }
     }
 
     fun onPlusTwoSolveClicked(solveId: Long) {
         viewModelScope.launch {
             solvesRepository.setPenaltyToSolve(solveId, PenaltyType.PLUS_TWO)
-            lastSolveFlow.update {
-                it?.copy(penalty = PenaltyType.PLUS_TWO)
-            }
         }
     }
 
@@ -127,17 +129,27 @@ class ChronometerViewModel @Inject constructor(
         }
     }
 
-    private fun statisticsFlow() = statisticsRepository.observeStatistics()
+    private fun statisticsFlow(): Flow<Statistics?> = statisticsRepository.observeStatistics()
+
+    private fun lastSolveFlow(): Flow<Solve?> =
+        lastSolveIdFlow
+            .flatMapLatest { lastSolveId ->
+                if (lastSolveId == null) {
+                    flowOf(null)
+                } else {
+                    solvesRepository.observeSolve(lastSolveId)
+                }
+            }
 
     private fun saveSolve(
         scramble: Scramble,
         time: Long,
     ) = viewModelScope.launch {
-        val solve = solvesRepository.saveSolve(
+        val newSolve = solvesRepository.saveSolve(
             scramble = scramble.moves,
             time = time,
         )
-        lastSolveFlow.tryEmit(solve)
+        lastSolveIdFlow.tryEmit(newSolve.id)
     }
 
     private companion object {
@@ -150,7 +162,7 @@ class ChronometerViewModel @Inject constructor(
 
         fun initialTimer() = State.Timer(
             isRunning = false,
-            elapsedTimestamp = 0L
+            elapsedTime = 0L
         )
     }
 }

@@ -248,7 +248,7 @@ private fun Timer(
         label = "Timer divider size",
     )
     val timerText = if (lastSolve == null || timer.isRunning) {
-        formatMilliseconds(timer.elapsedTimestamp)
+        formatMilliseconds(timer.elapsedTime)
     } else {
         when (lastSolve.penalty) {
             PenaltyType.DNF -> "DNF"
@@ -441,7 +441,7 @@ private fun ChronometerScreenPreview() {
                 scramble = ScrambleState.Loading,
                 timer = State.Timer(
                     isRunning = false,
-                    elapsedTimestamp = 1000L,
+                    elapsedTime = 1000L,
                 ),
                 lastSolve = Solve(
                     id = 0,

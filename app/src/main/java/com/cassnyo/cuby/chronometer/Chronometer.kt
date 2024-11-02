@@ -19,8 +19,8 @@ class Chronometer @Inject constructor() {
         if (isRunning()) throw IllegalStateException("Chronometer is already running")
 
         startTime = System.currentTimeMillis()
-        timerJob = CoroutineScope(Dispatchers.Default).launch {
-            while(true) {
+        timerJob = CoroutineScope(Dispatchers.IO).launch {
+            while(isRunning()) {
                 elapsedTime.tryEmit(System.currentTimeMillis() - startTime)
                 delay(PERIOD_MILLISECONDS)
             }
@@ -41,7 +41,7 @@ class Chronometer @Inject constructor() {
     fun elapsedTimeFlow(): Flow<Long> = elapsedTime
 
      private companion object {
-        const val PERIOD_MILLISECONDS = 10L
+        private const val PERIOD_MILLISECONDS = 16L
     }
 
 }

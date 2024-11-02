@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SolveDao {
+
+    @Query("SELECT * FROM solve WHERE id == :solveId")
+    fun observeSolve(solveId: Long): Flow<SolveEntity?>
+
     @Insert
     suspend fun saveSolve(solve: SolveEntity): Long
 
@@ -26,4 +30,5 @@ interface SolveDao {
 
     @Query("SELECT * FROM solve ORDER BY time ASC LIMIT 1")
     fun observeBestSolve(): Flow<SolveEntity?>
+
 }
