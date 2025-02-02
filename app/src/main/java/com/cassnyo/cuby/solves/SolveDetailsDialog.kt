@@ -23,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.cassnyo.cuby.common.ui.TimeFormatter
 import com.cassnyo.cuby.common.ui.asString
 import com.cassnyo.cuby.common.ui.composable.ScrambleImage
