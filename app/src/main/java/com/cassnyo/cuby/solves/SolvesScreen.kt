@@ -1,5 +1,6 @@
 package com.cassnyo.cuby.solves
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.cassnyo.cuby.R
 import com.cassnyo.cuby.common.ui.TimeFormatter
+import com.cassnyo.cuby.common.ui.asString
 import com.cassnyo.cuby.data.repository.solves.model.PenaltyType
 import com.cassnyo.cuby.data.repository.solves.model.PenaltyType.DNF
 import com.cassnyo.cuby.data.repository.solves.model.PenaltyType.PLUS_TWO
@@ -47,6 +49,9 @@ fun SolvesScreen(
 
     SolvesScreenContent(
         state = state,
+        onSolveClick = viewModel::onSolveClick,
+        onSolveDetailsDialogDismissRequest = viewModel::onSolveDetailsDialogDismissRequest,
+        onSolveDetailsDialogDeleteClick = viewModel::onSolveDetailsDialogDeleteClick,
         modifier = modifier,
     )
 }
@@ -54,6 +59,9 @@ fun SolvesScreen(
 @Composable
 fun SolvesScreenContent(
     state: State,
+    onSolveClick: (Solve) -> Unit,
+    onSolveDetailsDialogDismissRequest: () -> Unit,
+    onSolveDetailsDialogDeleteClick: (Solve) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -66,7 +74,19 @@ fun SolvesScreenContent(
             }
 
             is SolvesState.Content -> {
-                SolvesContent(solves = state.solvesState.solves)
+                SolvesContent(
+                    solves = state.solvesState.solves,
+                    onSolveClick = onSolveClick
+                )
+
+                state.solvesState.solveDetailsDialog?.let { solveDetailsDialog ->
+                    SolveDetailsDialog(
+                        solve = solveDetailsDialog.solve,
+                        scrambleImage = solveDetailsDialog.scrambleImage,
+                        onDeleteClick = onSolveDetailsDialogDeleteClick,
+                        onDismissRequest = onSolveDetailsDialogDismissRequest,
+                    )
+                }
             }
         }
     }
@@ -84,13 +104,14 @@ private fun SolvesLoading(
 @Composable
 private fun SolvesContent(
     solves: List<Solve>,
+    onSolveClick: (Solve) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         contentPadding = PaddingValues(all = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(space = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(space = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
         modifier = modifier,
     ) {
         items(
@@ -98,7 +119,9 @@ private fun SolvesContent(
             key = { index -> solves[index].id },
         ) { index ->
             SolveItem(
-                solve = solves[index]
+                solve = solves[index],
+                onClick = onSolveClick,
+                modifier = Modifier.animateItem(),
             )
         }
     }
@@ -107,6 +130,7 @@ private fun SolvesContent(
 @Composable
 private fun SolveItem(
     solve: Solve,
+    onClick: (Solve) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val solveTimeText = when (solve.penalty) {
@@ -115,7 +139,10 @@ private fun SolveItem(
         null -> TimeFormatter.formatMilliseconds(solve.time)
     }
 
-    Card(modifier = modifier) {
+    Card(
+        modifier = modifier
+            .clickable(onClick = { onClick(solve) }),
+    ) {
         Column(
             modifier = Modifier.padding(all = 8.dp)
         ) {
@@ -130,7 +157,7 @@ private fun SolveItem(
 
                 if (solve.penalty == PLUS_TWO) {
                     Text(
-                        text = stringResource(id = R.string.common_penalty_plus_two),
+                        text = solve.penalty.asString(),
                         color = Color.Red,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -168,26 +195,29 @@ private fun PreviewSolvesScreen() {
                     stubSolve(id = 10L),
                 )
             )
-        )
+        ),
+        onSolveClick = {},
+        onSolveDetailsDialogDismissRequest = {},
+        onSolveDetailsDialogDeleteClick = {},
     )
 }
 
 @Preview
 @Composable
 private fun PreviewSolveItem() {
-    SolveItem(solve = stubSolve())
+    SolveItem(solve = stubSolve(), onClick = {})
 }
 
 @Preview
 @Composable
 private fun PreviewSolveItemWithDnfPenalty() {
-    SolveItem(solve = stubSolve(penalty = DNF))
+    SolveItem(solve = stubSolve(penalty = DNF), onClick = {})
 }
 
 @Preview
 @Composable
 private fun PreviewSolveItemWithPlusTwoPenalty() {
-    SolveItem(solve = stubSolve(penalty = PLUS_TWO))
+    SolveItem(solve = stubSolve(penalty = PLUS_TWO), onClick = {})
 }
 
 private fun stubSolve(

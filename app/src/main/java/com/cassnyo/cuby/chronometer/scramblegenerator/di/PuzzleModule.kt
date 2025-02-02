@@ -2,6 +2,8 @@ package com.cassnyo.cuby.chronometer.scramblegenerator.di
 
 import com.cassnyo.cuby.chronometer.scramblegenerator.ScrambleGenerator
 import com.cassnyo.cuby.chronometer.scramblegenerator.ScrambleGeneratorImpl
+import com.cassnyo.cuby.chronometer.scramblegenerator.ScrambleImageGenerator
+import com.cassnyo.cuby.chronometer.scramblegenerator.ScrambleImageGeneratorImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -25,5 +27,8 @@ interface ScrambleGeneratorModule {
 
     @Binds
     fun bindScrambleGenerator(scrambleGenerator: ScrambleGeneratorImpl): ScrambleGenerator
+
+    @Binds
+    fun bindScrambleImageGenerator(scrambleImageGeneratorImpl: ScrambleImageGeneratorImpl): ScrambleImageGenerator
 
 }

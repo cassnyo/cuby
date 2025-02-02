@@ -1,13 +1,11 @@
 package com.cassnyo.cuby.chronometer
 
-import android.graphics.Canvas
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,22 +31,20 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.createBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.cassnyo.cuby.R
 import com.cassnyo.cuby.chronometer.ChronometerViewModel.State
 import com.cassnyo.cuby.chronometer.ChronometerViewModel.State.ScrambleState
 import com.cassnyo.cuby.chronometer.scramblegenerator.Scramble
 import com.cassnyo.cuby.common.ui.TimeFormatter
+import com.cassnyo.cuby.common.ui.composable.ScrambleImage
 import com.cassnyo.cuby.data.repository.solves.model.PenaltyType
 import com.cassnyo.cuby.data.repository.solves.model.Solve
 import com.cassnyo.cuby.data.repository.statistics.model.Statistics
@@ -56,9 +52,7 @@ import com.cassnyo.cuby.ui.theme.CubyTheme
 import com.cassnyo.cuby.ui.theme.highlightTextOnBackgroundDark
 import com.cassnyo.cuby.ui.theme.iconOnBackgroundDark
 import com.cassnyo.cuby.ui.theme.textOnBackground
-import com.caverock.androidsvg.SVG
 import java.time.LocalDateTime
-import kotlin.math.roundToInt
 
 @Composable
 fun ChronometerScreen() {
@@ -197,29 +191,6 @@ private fun ScrambleSequence(
             }
         }
     }
-}
-
-@Composable
-private fun ScrambleImage(
-    imageSvg: String,
-    modifier: Modifier = Modifier,
-) {
-    val image = remember {
-        val svg = SVG.getFromString(imageSvg)
-        val bitmap = createBitmap(
-            width = svg.documentWidth.roundToInt(),
-            height = svg.documentHeight.roundToInt()
-        )
-        val canvas = Canvas(bitmap)
-        svg.renderToCanvas(canvas)
-        bitmap.asImageBitmap()
-    }
-
-    Image(
-        bitmap = image,
-        contentDescription = null,
-        modifier = modifier,
-    )
 }
 
 @Composable
