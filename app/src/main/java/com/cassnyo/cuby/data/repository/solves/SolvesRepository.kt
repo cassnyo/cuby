@@ -17,6 +17,7 @@ import javax.inject.Inject
 
 interface SolvesRepository {
     fun observeSolve(solveId: Long): Flow<Solve?>
+    fun observeAllSolves(): Flow<List<Solve>>
     suspend fun saveSolve(scramble: String, time: Long): Solve
     suspend fun deleteSolve(solveId: Long)
     suspend fun setPenaltyToSolve(solveId: Long, penalty: PenaltyType)
@@ -30,6 +31,11 @@ class SolvesRepositoryImpl @Inject constructor(
     override fun observeSolve(solveId: Long): Flow<Solve?> =
         solveDao
             .observeSolve(solveId).map { it?.toDomain() }
+            .flowOn(ioDispatcher)
+
+    override fun observeAllSolves(): Flow<List<Solve>> =
+        solveDao
+            .observeAllSolves().map { solves -> solves.map { it.toDomain() } }
             .flowOn(ioDispatcher)
 
     override suspend fun saveSolve(scramble: String, time: Long): Solve = withContext(ioDispatcher) {

@@ -48,6 +48,7 @@ import com.cassnyo.cuby.R
 import com.cassnyo.cuby.chronometer.ChronometerViewModel.State
 import com.cassnyo.cuby.chronometer.ChronometerViewModel.State.ScrambleState
 import com.cassnyo.cuby.chronometer.scramblegenerator.Scramble
+import com.cassnyo.cuby.common.ui.TimeFormatter
 import com.cassnyo.cuby.data.repository.solves.model.PenaltyType
 import com.cassnyo.cuby.data.repository.solves.model.Solve
 import com.cassnyo.cuby.data.repository.statistics.model.Statistics
@@ -125,19 +126,6 @@ private fun ChronometerScreenContent(
             )
         }
     }
-}
-
-fun formatMilliseconds(milliseconds: Long): String {
-    val totalSeconds = milliseconds / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    val remainingMilliseconds = milliseconds % 1000
-
-    val formattedMinutes = if (minutes > 0) "$minutes:" else ""
-    val formattedSeconds = if (minutes > 0) String.format("%02d", seconds) else seconds
-    val formattedMilliseconds = String.format("%02d", remainingMilliseconds / 10)
-
-    return "$formattedMinutes$formattedSeconds.$formattedMilliseconds"
 }
 
 @Composable
@@ -248,12 +236,13 @@ private fun Timer(
         label = "Timer divider size",
     )
     val timerText = if (lastSolve == null || timer.isRunning) {
-        formatMilliseconds(timer.elapsedTime)
+        TimeFormatter.formatMilliseconds(timer.elapsedTime)
     } else {
         when (lastSolve.penalty) {
-            PenaltyType.DNF -> "DNF"
-            PenaltyType.PLUS_TWO -> "${formatMilliseconds(lastSolve.time)} +2"
-            else -> formatMilliseconds(lastSolve.time)
+            PenaltyType.DNF -> stringResource(id = R.string.common_penalty_dnf)
+            PenaltyType.PLUS_TWO ->
+                "${TimeFormatter.formatMilliseconds(lastSolve.time)} ${stringResource(id = R.string.common_penalty_plus_two)}"
+            else -> TimeFormatter.formatMilliseconds(lastSolve.time)
         }
     }
 
@@ -427,7 +416,7 @@ private fun StatisticsTimedRow(
 ) {
     StatisticsRow(
         label = label,
-        value = formatMilliseconds(value),
+        value = TimeFormatter.formatMilliseconds(value),
         modifier = modifier,
     )
 }

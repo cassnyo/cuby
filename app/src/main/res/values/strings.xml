@@ -13,4 +13,8 @@
     <string name="chronometer_statistics_ao50">Ao50</string>
     <string name="chronometer_statistics_ao100">Ao100</string>
 
+    // Common
+    <string name="common_penalty_dnf">DNF</string>
+    <string name="common_penalty_plus_two">+2</string>
+
 </resources>
